@@ -1,0 +1,16 @@
+.venv/
+venv/
+portable/
+.freebuff/
+*.zip
+__pycache__/
+*.py[cod]
+instance/
+*.db
+*.sqlite3
+.env
+.pytest_cache/
+server.log
+run*.log
+.DS_Store
+Thumbs.db

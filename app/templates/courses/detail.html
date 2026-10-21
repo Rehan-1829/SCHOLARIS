@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+{% from "_macros.html" import meter, csrf_field, empty_state %}
+{% block title %}{{ course.code }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="mono course-kicker">{{ course.code }} · Semester {{ course.semester }}</p>
+    <h1 class="page-title">{{ course.title }}</h1>
+    <p class="page-sub">
+      {{ course.department }} · {{ course.credits }} credits ·
+      {{ course.teacher.name if course.teacher else 'Faculty to be assigned' }} ·
+      {{ course.registered_count }} on the roll · {{ course.capacity }} seats
+    </p>
+  </div>
+  <div class="actions">
+    {% if can_manage %}
+      <a class="btn" href="{{ url_for('courses.attendance', course_id=course.id) }}">Take register</a>
+      <a class="btn" href="{{ url_for('courses.grades', course_id=course.id) }}">Grade sheet</a>
+    {% endif %}
+    {% if current_user.role == 'admin' %}
+      <a class="btn btn-primary" href="{{ url_for('courses.edit', course_id=course.id) }}">Edit course</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if my_result %}
+  <section class="stats stats--three" aria-label="Your standing">
+    <div class="stat">
+      <p class="stat-value">{{ my_result.attendance.percentage|pct if my_result.attendance.percentage is not none else '—' }}</p>
+      <p class="stat-label">Your attendance</p>
+      <p class="stat-note">{{ my_result.attendance.attended }} of {{ my_result.attendance.counted }} classes</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">{{ my_result.result.percentage|pct if my_result.result.percentage is not none else '—' }}</p>
+      <p class="stat-label">Weighted score</p>
+      <p class="stat-note">{{ my_result.result.graded_weight|round(0)|int }}% of the grade recorded</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">{{ my_result.result.letter }}</p>
+      <p class="stat-label">Current grade</p>
+      <p class="stat-note">{{ my_result.result.points|round(0)|int }} grade points</p>
+    </div>
+  </section>
+{% endif %}
+
+<div class="dashboard-grid">
+  <section class="sheet">
+    <div class="sheet-head">
+      <h2 class="sheet-title">{{ 'Your marks' if current_user.role == 'student' else 'Class roster' }}</h2>
+      {% if can_manage %}<span class="small-text muted">{{ roster|length }} on record</span>{% endif %}
+    </div>
+
+    {% if current_user.role == 'student' %}
+      {% if my_result and my_result.result.rows %}
+        <table class="data">
+          <thead><tr><th>Assessment</th><th class="num">Score</th><th class="num">Weight</th><th class="num">Contribution</th></tr></thead>
+          <tbody>
+            {% for row in my_result.result.rows %}
+              <tr>
+                <td>
+                  <span class="cell-primary">{{ row.assessment.name }}</span>
+                  <span class="cell-secondary">{{ row.assessment.kind|capitalize }} · out of {{ row.assessment.max_score|round(0)|int }}</span>
+                </td>
+                <td class="num">
+                  {% if row.score and row.score.marks is not none %}{{ row.score.marks|round(1) }}{% else %}<span class="muted">Not entered</span>{% endif %}
+                </td>
+                <td class="num muted">{{ row.assessment.weight|round(0)|int }}%</td>
+                <td class="num">{{ row.percentage|pct if row.percentage is not none else '—' }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        {{ empty_state('No assessments yet', 'Your faculty has not published any assessments for this course.') }}
+      {% endif %}
+    {% elif roster %}
+      <div class="table-wrap">
+        <table class="data">
+          <thead>
+            <tr><th>Student</th><th class="col-meter">Attendance</th><th class="num">Score</th><th class="num">Grade</th>{% if can_manage %}<th></th>{% endif %}</tr>
+          </thead>
+          <tbody>
+            {% for row in roster %}
+              <tr>
+                <td>
+                  <a class="cell-primary link" href="{{ url_for('students.detail', student_id=row.student.id) }}">{{ row.student.name }}</a>
+                  <span class="cell-secondary mono">{{ row.student.roll_no }}{% if row.enrollment.status != 'enrolled' %} · {{ row.enrollment.status }}{% endif %}</span>
+                </td>
+                <td class="col-meter">{{ meter(row.attendance.percentage, attendance_threshold) }}</td>
+                <td class="num">{{ row.result.percentage|pct if row.result.percentage is not none else '—' }}</td>
+                <td class="num"><span class="grade">{{ row.result.letter }}</span></td>
+                {% if can_manage %}
+                  <td class="row-actions">
+                    {% if row.enrollment.status == 'enrolled' %}
+                      <form method="post" action="{{ url_for('courses.drop', enrollment_id=row.enrollment.id) }}"
+                            data-confirm="Remove {{ row.student.name }} from {{ course.code }}?">
+                        {{ csrf_field() }}
+                        <button class="btn btn-sm btn-ghost" type="submit">Remove</button>
+                      </form>
+                    {% endif %}
+                  </td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      {{ empty_state('No one enrolled', 'Enrol students to start taking the register for this course.') }}
+    {% endif %}
+  </section>
+
+  <div class="stack">
+    {% if current_user.role == 'admin' %}
+      <section class="sheet">
+        <div class="sheet-head"><h2 class="sheet-title">Enrol a student</h2></div>
+        <form class="sheet-pad" method="post" action="{{ url_for('courses.enroll', course_id=course.id) }}">
+          {{ csrf_field() }}
+          <div class="field">
+            <label for="student_id">Student</label>
+            <select class="input" id="student_id" name="student_id" required>
+              <option value="">Choose a student</option>
+              {% for student in candidates %}
+                <option value="{{ student.id }}">{{ student.roll_no }} — {{ student.name }}</option>
+              {% endfor %}
+            </select>
+            <p class="help">{{ course.seats_left }} seat{{ '' if course.seats_left == 1 else 's' }} left in this course.</p>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit" {{ 'disabled' if not candidates or not course.seats_left }}>Enrol student</button>
+        </form>
+      </section>
+    {% endif %}
+
+    <section class="sheet">
+      <div class="sheet-head"><h2 class="sheet-title">Assessments</h2></div>
+      {% if course.assessments %}
+        <ul class="compact-list">
+          {% for assessment in course.assessments %}
+            <li>
+              <div>
+                <span class="cell-primary">{{ assessment.name }}</span>
+                <span class="cell-secondary">{{ assessment.kind|capitalize }} · {{ assessment.weight|round(0)|int }}% · out of {{ assessment.max_score|round(0)|int }}</span>
+              </div>
+              {% if can_manage %}
+                <a class="btn btn-sm" href="{{ url_for('courses.marks', course_id=course.id, assessment_id=assessment.id) }}">Marks</a>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+        <div class="sheet-foot">
+          <span class="small-text muted">Weight recorded: {{ course.assessments|sum(attribute='weight')|round(0)|int }}%</span>
+        </div>
+      {% else %}
+        <div class="empty">
+          <p class="empty-title">No assessments</p>
+          <p class="empty-text">Add quizzes, assignments and exams to build the grade.</p>
+        </div>
+      {% endif %}
+
+      {% if can_manage %}
+        <form class="sheet-pad inset-form" method="post" action="{{ url_for('courses.add_assessment', course_id=course.id) }}">
+          {{ csrf_field() }}
+          <div class="field">
+            <label for="name">Assessment name</label>
+            <input class="input" id="name" name="name" placeholder="Quiz 2" required>
+          </div>
+          <div class="form-grid form-grid--3">
+            <div class="field">
+              <label for="kind">Type</label>
+              <select class="input" id="kind" name="kind">
+                {% for kind in ['assignment', 'quiz', 'midterm', 'practical', 'project', 'final'] %}
+                  <option value="{{ kind }}">{{ kind|capitalize }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label for="max_score">Out of</label>
+              <input class="input" id="max_score" name="max_score" type="number" min="1" step="1" value="20" required>
+            </div>
+            <div class="field">
+              <label for="weight">Weight %</label>
+              <input class="input" id="weight" name="weight" type="number" min="1" max="100" step="1" value="10" required>
+            </div>
+          </div>
+          <div class="field">
+            <label for="scheduled_on">Date</label>
+            <input class="input" id="scheduled_on" name="scheduled_on" type="date">
+          </div>
+          <button class="btn" type="submit">Add assessment</button>
+        </form>
+      {% endif %}
+    </section>
+
+    {% if can_manage %}
+      <section class="sheet">
+        <div class="sheet-head"><h2 class="sheet-title">Recent registers</h2></div>
+        {% if course.sessions %}
+          <ul class="compact-list">
+            {% for session in course.sessions[:6] %}
+              <li>
+                <div>
+                  <span class="cell-primary">{{ session.session_date|day }}</span>
+                  <span class="cell-secondary">{{ session.topic or 'Class register' }}</span>
+                </div>
+                <a class="mono small-text link" href="{{ url_for('courses.attendance', course_id=course.id, date=session.session_date|iso_day) }}">{{ session.summary }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="empty"><p class="empty-title">No registers yet</p><p class="empty-text">Take the first register for this class.</p></div>
+        {% endif %}
+      </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

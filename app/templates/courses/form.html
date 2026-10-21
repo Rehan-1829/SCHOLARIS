@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}{{ 'Add a course' if mode == 'new' else 'Edit ' + course.code }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{{ 'Add a course' if mode == 'new' else 'Edit ' + course.code }}</h1>
+    <p class="page-sub">Course metadata, credits and the faculty member who keeps its register.</p>
+  </div>
+  <a class="btn" href="{{ url_for('courses.index') }}">Back to catalogue</a>
+</div>
+
+<form method="post" class="sheet">
+  {{ csrf_field() }}
+  <div class="sheet-pad">
+    <div class="form-grid">
+      <div class="field">
+        <label for="code">Course code <span class="req">required</span></label>
+        <input class="input mono" id="code" name="code" value="{{ values.code or '' }}" placeholder="BCA506" required>
+      </div>
+      <div class="field">
+        <label for="title">Course title <span class="req">required</span></label>
+        <input class="input" id="title" name="title" value="{{ values.title or '' }}" placeholder="Mobile Application Development" required>
+      </div>
+    </div>
+
+    <div class="form-grid form-grid--3">
+      <div class="field">
+        <label for="credits">Credits <span class="req">required</span></label>
+        <input class="input" id="credits" name="credits" type="number" min="1" max="8" value="{{ values.credits or 3 }}" required>
+      </div>
+      <div class="field">
+        <label for="semester">Semester <span class="req">required</span></label>
+        <input class="input" id="semester" name="semester" type="number" min="1" max="10" value="{{ values.semester or 1 }}" required>
+      </div>
+      <div class="field">
+        <label for="capacity">Seats</label>
+        <input class="input" id="capacity" name="capacity" type="number" min="1" max="300" value="{{ values.capacity or 50 }}">
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="department">Department <span class="req">required</span></label>
+        <input class="input" id="department" name="department" list="departments" value="{{ values.department or '' }}" required>
+        <datalist id="departments">
+          {% for department in departments %}<option value="{{ department }}">{% endfor %}
+        </datalist>
+      </div>
+      <div class="field">
+        <label for="teacher_id">Faculty in charge</label>
+        <select class="input" id="teacher_id" name="teacher_id">
+          <option value="">Assign later</option>
+          {% for teacher in teachers %}
+            <option value="{{ teacher.id }}" {{ 'selected' if teacher.id|string == values.teacher_id|string }}>
+              {{ teacher.name }} — {{ teacher.employee_no }}
+            </option>
+          {% endfor %}
+        </select>
+        <p class="help">Faculty can mark registers and enter marks for their own courses only.</p>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="description">Description</label>
+      <textarea class="input" id="description" name="description" rows="3" placeholder="What the course covers">{{ values.description or '' }}</textarea>
+    </div>
+  </div>
+
+  <div class="sheet-pad form-footer">
+    <button class="btn btn-primary" type="submit">{{ 'Add course' if mode == 'new' else 'Save changes' }}</button>
+    <a class="btn btn-ghost" href="{{ url_for('courses.index') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

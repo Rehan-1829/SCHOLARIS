@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "_macros.html" import meter, empty_state %}
+{% block title %}Grades · {{ course.code }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="mono course-kicker">{{ course.code }}</p>
+    <h1 class="page-title">Grade sheet</h1>
+    <p class="page-sub">{{ course.title }} · weighted across {{ course.assessments|length }} assessment{{ '' if course.assessments|length == 1 else 's' }}</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('courses.detail', course_id=course.id) }}">Back to course</a>
+  </div>
+</div>
+
+{% if rows %}
+  <section class="stats" aria-label="Class summary">
+    <div class="stat">
+      <p class="stat-value">{{ rows|length }}</p>
+      <p class="stat-label">Students graded</p>
+      <p class="stat-note">{{ complete_count }} with every assessment recorded</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">{{ average|pct if average is not none else '—' }}</p>
+      <p class="stat-label">Class average</p>
+      <p class="stat-note">Weighted percentage</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">{{ passing_count }}</p>
+      <p class="stat-label">Passing</p>
+      <p class="stat-note">At or above 40%</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">{{ graded_count }}</p>
+      <p class="stat-label">Results recorded</p>
+      <p class="stat-note">{{ rows|length - graded_count }} awaiting marks</p>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <div class="sheet-head">
+      <h2 class="sheet-title">Weighted results</h2>
+      <span class="small-text muted">Ten-point scale · F below 40%</span>
+    </div>
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr><th>Roll</th><th>Student</th><th class="num">Recorded weight</th><th class="num">Percentage</th><th class="num">Grade</th><th class="num">Points</th><th class="col-meter">Attendance</th></tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td class="mono">{{ row.student.roll_no }}</td>
+              <td class="cell-primary">{{ row.student.name }}</td>
+              <td class="num muted">{{ row.result.graded_weight|round(0)|int }} / {{ row.result.total_weight|round(0)|int }}%</td>
+              <td class="num">{{ row.result.percentage|pct if row.result.percentage is not none else '—' }}</td>
+              <td class="num"><span class="grade">{{ row.result.letter }}</span></td>
+              <td class="num mono">{{ row.result.points|round(0)|int if row.result.percentage is not none else '—' }}</td>
+              <td class="col-meter">{{ meter(row.attendance.percentage, attendance_threshold) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% else %}
+  <section class="sheet">
+    {{ empty_state('Nothing to grade', 'Enrol students and record marks to see results here.') }}
+  </section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% from "_macros.html" import meter, status_pill %}
+{% block title %}{{ student.name }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <div class="title-row">
+      <h1 class="page-title">{{ student.name }}</h1>
+      {{ status_pill(student.status) }}
+    </div>
+    <p class="page-sub">
+      <span class="mono">{{ student.roll_no }}</span> · {{ student.program }} · Semester {{ student.current_semester }}, Section {{ student.section }} · Batch {{ student.batch_year }}
+    </p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('reports.transcript', student_id=student.id) }}">Transcript</a>
+    {% if current_user.role == 'admin' %}
+      <a class="btn btn-primary" href="{{ url_for('students.edit', student_id=student.id) }}">Edit record</a>
+    {% endif %}
+  </div>
+</div>
+
+{% if overall.is_short %}
+  <div class="notice notice-alert">
+    <strong>Attendance below {{ attendance_threshold }}%.</strong>
+    Overall attendance is {{ overall.percentage|pct }}. {{ overall.classes_needed }} consecutive classes are needed to recover.
+  </div>
+{% endif %}
+
+<section class="stats" aria-label="Summary">
+  <div class="stat">
+    <p class="stat-value">{{ overall.percentage|pct if overall.percentage is not none else '—' }}</p>
+    <p class="stat-label">Attendance</p>
+    <p class="stat-note">{{ overall.attended }} attended · {{ overall.absent }} absent · {{ overall.excused }} excused</p>
+  </div>
+  <div class="stat">
+    <p class="stat-value">{{ semester.sgpa if semester.sgpa is not none else '—' }}</p>
+    <p class="stat-label">SGPA · semester {{ student.current_semester }}</p>
+    <p class="stat-note">{{ semester.credits|round(0)|int }} credits graded</p>
+  </div>
+  <div class="stat">
+    <p class="stat-value">{{ cgpa if cgpa is not none else '—' }}</p>
+    <p class="stat-label">CGPA</p>
+    <p class="stat-note">{{ credits|round(0)|int }} credits across semesters</p>
+  </div>
+  {% if fees %}
+    <div class="stat">
+      <p class="stat-value">{{ fees.balance|money }}</p>
+      <p class="stat-label">Fees due</p>
+      <p class="stat-note {{ 'is-alert' if fees.overdue }}">{{ fees.paid|money }} paid of {{ fees.invoiced|money }}</p>
+    </div>
+  {% else %}
+    <div class="stat">
+      <p class="stat-value">{{ student.enrollments|length }}</p>
+      <p class="stat-label">Enrolments</p>
+      <p class="stat-note">Across all semesters</p>
+    </div>
+  {% endif %}
+</section>
+
+<div class="dashboard-grid">
+  <section class="sheet">
+    <div class="sheet-head"><h2 class="sheet-title">Current courses</h2></div>
+    {% if course_rows %}
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Course</th><th>Faculty</th><th class="col-meter">Attendance</th><th class="num">Result</th></tr></thead>
+          <tbody>
+            {% for row in course_rows %}
+              <tr>
+                <td>
+                  <a class="cell-primary link" href="{{ url_for('courses.detail', course_id=row.course.id) }}">{{ row.course.code }}</a>
+                  <span class="cell-secondary">{{ row.course.title }}</span>
+                </td>
+                <td class="muted">{{ row.course.teacher.name if row.course.teacher else 'Unassigned' }}</td>
+                <td class="col-meter">{{ meter(row.attendance.percentage, attendance_threshold) }}</td>
+                <td class="num">
+                  {% if row.result.percentage is not none %}
+                    <span class="grade">{{ row.result.letter }}</span>
+                    <span class="cell-secondary">{{ row.result.percentage|pct }}</span>
+                  {% else %}<span class="muted">—</span>{% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty"><p class="empty-title">No active courses</p><p class="empty-text">This student is not enrolled in any course this semester.</p></div>
+    {% endif %}
+  </section>
+
+  <div class="stack">
+    <section class="sheet">
+      <div class="sheet-head"><h2 class="sheet-title">Contact</h2></div>
+      <div class="sheet-pad">
+        <dl class="detail-list detail-list--tight">
+          <div><dt>Email</dt><dd class="mono small-text">{{ student.email }}</dd></div>
+          <div><dt>Mobile</dt><dd class="mono">{{ student.phone or '—' }}</dd></div>
+          <div><dt>Date of birth</dt><dd>{{ student.date_of_birth|day }}</dd></div>
+          <div><dt>Admitted</dt><dd>{{ student.admitted_on|day }}</dd></div>
+          <div><dt>Guardian</dt><dd>{{ student.guardian_name or '—' }}{% if student.guardian_phone %} · <span class="mono">{{ student.guardian_phone }}</span>{% endif %}</dd></div>
+          <div><dt>Address</dt><dd>{{ student.address or '—' }}</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    {% if fees %}
+      <section class="sheet">
+        <div class="sheet-head">
+          <h2 class="sheet-title">Fees</h2>
+          <a class="small-link" href="{{ url_for('finance.index', q=student.roll_no) }}">Ledger</a>
+        </div>
+        <div class="sheet-pad">
+          <dl class="detail-list detail-list--tight">
+            <div><dt>Invoiced</dt><dd class="num">{{ fees.invoiced|money }}</dd></div>
+            <div><dt>Paid</dt><dd class="num">{{ fees.paid|money }}</dd></div>
+            <div><dt>Balance</dt><dd class="num strong">{{ fees.balance|money }}</dd></div>
+          </dl>
+        </div>
+      </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block body_class %}auth-body{% endblock %}
+
+{% block body %}
+<div class="auth">
+  <aside class="auth-aside">
+    <div class="auth-brand">
+      <span class="brand-mark brand-mark--light">S</span>
+      <span class="brand-name">Scholaris</span>
+    </div>
+
+    <div class="auth-statement">
+      <p class="auth-quote">Every student, every register, every rupee — in one place.</p>
+      <p class="auth-note">Admissions, class registers, marks and fee receipts for the {{ current_term }} session at {{ college_name }}.</p>
+    </div>
+
+    <div class="auth-foot">
+      <span class="rule-short"></span>
+      <p>Sign in with the account issued by the registrar's office.</p>
+    </div>
+  </aside>
+
+  <main class="auth-main">
+    <div class="auth-card">
+      <h1>Sign in</h1>
+      <p class="page-sub">Use your college email address.</p>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flashes">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      <form method="post" class="auth-form" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="field">
+          <label for="email">Email address</label>
+          <input class="input" id="email" name="email" type="email" value="{{ email }}"
+                 autocomplete="username" required autofocus>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input class="input" id="password" name="password" type="password"
+                 autocomplete="current-password" required>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Sign in</button>
+      </form>
+
+      <div class="auth-credentials">
+        <p class="auth-credentials-title">Demo accounts after <code>flask seed</code></p>
+        <dl>
+          <div><dt>Registrar</dt><dd><code>registrar@scholaris.edu</code> / <code>registrar123</code></dd></div>
+          <div><dt>Faculty</dt><dd><code>lakshmi.venkatesan@scholaris.edu</code> / <code>faculty123</code></dd></div>
+          <div><dt>Student</dt><dd><code>aarav.mehta@student.scholaris.edu</code> / <code>student123</code></dd></div>
+        </dl>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}

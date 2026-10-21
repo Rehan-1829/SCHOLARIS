@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}{{ 'Admit a student' if mode == 'new' else 'Edit student' }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{{ 'Admit a student' if mode == 'new' else 'Edit ' + student.name }}</h1>
+    <p class="page-sub">
+      {% if mode == 'new' %}Create the student's record and their sign-in account in one step.
+      {% else %}Roll number <span class="mono">{{ student.roll_no }}</span> · changes are recorded immediately.{% endif %}
+    </p>
+  </div>
+  <a class="btn" href="{{ url_for('students.index') }}">Back to register</a>
+</div>
+
+<form method="post" class="sheet" novalidate>
+  {{ csrf_field() }}
+  <div class="sheet-head"><h2 class="sheet-title">Identity</h2></div>
+  <div class="sheet-pad">
+    <div class="form-grid">
+      <div class="field">
+        <label for="full_name">Full name <span class="req">required</span></label>
+        <input class="input" id="full_name" name="full_name" value="{{ values.full_name or '' }}" required>
+      </div>
+      <div class="field">
+        <label for="email">College email <span class="req">required</span></label>
+        <input class="input" id="email" name="email" type="email" value="{{ values.email or '' }}" required>
+        <p class="help">This becomes the sign-in username.</p>
+      </div>
+      <div class="field">
+        <label for="roll_no">Roll number <span class="req">required</span></label>
+        <input class="input mono" id="roll_no" name="roll_no" value="{{ values.roll_no or '' }}" required>
+      </div>
+      <div class="field">
+        <label for="date_of_birth">Date of birth</label>
+        <input class="input" id="date_of_birth" name="date_of_birth" type="date" value="{{ values.date_of_birth or '' }}">
+      </div>
+      <div class="field">
+        <label for="phone">Mobile</label>
+        <input class="input" id="phone" name="phone" value="{{ values.phone or '' }}" inputmode="tel">
+      </div>
+      <div class="field">
+        <label for="address">Address</label>
+        <input class="input" id="address" name="address" value="{{ values.address or '' }}">
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet-head"><h2 class="sheet-title">Programme</h2></div>
+  <div class="sheet-pad">
+    <div class="form-grid form-grid--3">
+      <div class="field">
+        <label for="program">Programme <span class="req">required</span></label>
+        <select class="input" id="program" name="program" required>
+          <option value="">Choose a programme</option>
+          {% for item in programs %}
+            <option value="{{ item }}" {{ 'selected' if item == values.program }}>{{ item }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="batch_year">Batch year <span class="req">required</span></label>
+        <input class="input" id="batch_year" name="batch_year" type="number" min="2000" max="2100" value="{{ values.batch_year or '' }}" required>
+      </div>
+      <div class="field">
+        <label for="current_semester">Current semester <span class="req">required</span></label>
+        <input class="input" id="current_semester" name="current_semester" type="number" min="1" max="10" value="{{ values.current_semester or 1 }}" required>
+      </div>
+      <div class="field">
+        <label for="section">Section</label>
+        <input class="input" id="section" name="section" value="{{ values.section or 'A' }}" maxlength="4">
+      </div>
+      <div class="field">
+        <label for="status">Status</label>
+        <select class="input" id="status" name="status">
+          {% for item in statuses %}
+            <option value="{{ item }}" {{ 'selected' if item == (values.status or 'active') }}>{{ item|capitalize }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% if mode == 'new' %}
+        <div class="field">
+          <label for="password">Initial password</label>
+          <input class="input" id="password" name="password" value="" placeholder="welcome123" autocomplete="new-password">
+          <p class="help">Leave blank to use <code>welcome123</code>. The student can change it after signing in.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="sheet-head"><h2 class="sheet-title">Guardian</h2></div>
+  <div class="sheet-pad">
+    <div class="form-grid">
+      <div class="field">
+        <label for="guardian_name">Guardian name</label>
+        <input class="input" id="guardian_name" name="guardian_name" value="{{ values.guardian_name or '' }}">
+      </div>
+      <div class="field">
+        <label for="guardian_phone">Guardian phone</label>
+        <input class="input" id="guardian_phone" name="guardian_phone" value="{{ values.guardian_phone or '' }}" inputmode="tel">
+      </div>
+    </div>
+  </div>
+
+  <div class="sheet-pad form-footer">
+    <button class="btn btn-primary" type="submit">{{ 'Admit student' if mode == 'new' else 'Save changes' }}</button>
+    <a class="btn btn-ghost" href="{{ url_for('students.index') if mode == 'new' else url_for('students.detail', student_id=student.id) }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

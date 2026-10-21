@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field, status_pill %}
+{% block title %}{{ invoice.title }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="mono course-kicker">INV-{{ '%05d'|format(invoice.id) }} · {{ invoice.term }}</p>
+    <div class="title-row">
+      <h1 class="page-title">{{ invoice.title }}</h1>
+      {% if invoice.status != 'paid' %}
+        <span class="stamp stamp-{{ invoice.status }}">{{ invoice.status }}</span>
+      {% endif %}
+    </div>
+    <p class="page-sub">{{ invoice.student.name }} · <span class="mono">{{ invoice.student.roll_no }}</span> · raised {{ invoice.issued_on|day }}</p>
+  </div>
+  <a class="btn" href="{{ url_for('finance.index') }}">Back to ledger</a>
+</div>
+
+<div class="dashboard-grid">
+  <div class="stack">
+    <section class="sheet">
+      <div class="sheet-head"><h2 class="sheet-title">Amounts</h2></div>
+      <div class="sheet-pad">
+        <dl class="money-list">
+          <div><dt>Invoice amount</dt><dd class="num">{{ invoice.amount|money }}</dd></div>
+          <div><dt>Received</dt><dd class="num">{{ invoice.paid_total|money }}</dd></div>
+          <div class="money-total"><dt>Balance</dt><dd class="num">{{ invoice.balance|money }}</dd></div>
+        </dl>
+        <p class="help">Due {{ invoice.due_date|day }}{% if invoice.status == 'overdue' %} · overdue{% endif %}</p>
+      </div>
+    </section>
+
+    <section class="sheet">
+      <div class="sheet-head">
+        <h2 class="sheet-title">Payments</h2>
+        <span class="small-text muted">{{ invoice.payments|length }} recorded</span>
+      </div>
+      {% if invoice.payments %}
+        <div class="table-wrap">
+          <table class="data">
+            <thead><tr><th>Receipt</th><th>Date</th><th>Method</th><th>Reference</th><th class="num">Amount</th></tr></thead>
+            <tbody>
+              {% for payment in invoice.payments %}
+                <tr>
+                  <td><a class="mono link" href="{{ url_for('finance.receipt', payment_id=payment.id) }}">{{ payment.receipt_no }}</a></td>
+                  <td class="muted">{{ payment.paid_on|day }}</td>
+                  <td>{{ payment.method|method }}</td>
+                  <td class="mono muted small-text">{{ payment.reference or '—' }}</td>
+                  <td class="num">{{ payment.amount|money }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty">
+          <p class="empty-title">Nothing received yet</p>
+          <p class="empty-text">{{ 'Payments recorded by the office will appear here.' if current_user.role == 'student' else 'Record the first payment using the form.' }}</p>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+
+  <div class="stack">
+    <section class="sheet">
+      <div class="sheet-head"><h2 class="sheet-title">Student</h2></div>
+      <div class="sheet-pad">
+        <dl class="detail-list detail-list--tight">
+          <div><dt>Name</dt><dd><a class="link" href="{{ url_for('students.detail', student_id=invoice.student.id) }}">{{ invoice.student.name }}</a></dd></div>
+          <div><dt>Roll</dt><dd class="mono">{{ invoice.student.roll_no }}</dd></div>
+          <div><dt>Programme</dt><dd>{{ invoice.student.program }}</dd></div>
+          <div><dt>Semester</dt><dd>{{ invoice.student.current_semester }}</dd></div>
+          <div><dt>Status</dt><dd>{{ status_pill(invoice.student.status) }}</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    {% if current_user.role == 'admin' %}
+      <section class="sheet">
+        <div class="sheet-head"><h2 class="sheet-title">Record a payment</h2></div>
+        {% if invoice.balance > 0 %}
+          <form class="sheet-pad" method="post" action="{{ url_for('finance.record_payment', invoice_id=invoice.id) }}">
+            {{ csrf_field() }}
+            <div class="field">
+              <label for="amount">Amount (₹)</label>
+              <input class="input" id="amount" name="amount" type="number" min="0.01" step="0.01"
+                     max="{{ invoice.balance }}" value="{{ invoice.balance }}" required>
+              <p class="help">Up to {{ invoice.balance|money }} outstanding.</p>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label for="method">Method</label>
+                <select class="input" id="method" name="method">
+                  {% for method in methods %}<option value="{{ method }}">{{ method|method }}</option>{% endfor %}
+                </select>
+              </div>
+              <div class="field">
+                <label for="paid_on">Date</label>
+                <input class="input" id="paid_on" name="paid_on" type="date" value="{{ today|iso_day }}" max="{{ today|iso_day }}">
+              </div>
+            </div>
+            <div class="field">
+              <label for="reference">Reference</label>
+              <input class="input" id="reference" name="reference" placeholder="UPI / cheque number">
+            </div>
+            <button class="btn btn-primary btn-block" type="submit">Record payment</button>
+          </form>
+        {% else %}
+          <div class="empty">
+            <p class="empty-title">Invoice settled</p>
+            <p class="empty-text">No balance remains on this invoice.</p>
+          </div>
+        {% endif %}
+      </section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

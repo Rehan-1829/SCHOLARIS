@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% from "_macros.html" import meter, status_pill %}
+{% block title %}My record{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{{ student.name }}</h1>
+    <p class="page-sub">
+      <span class="mono">{{ student.roll_no }}</span> · {{ student.program }}, semester {{ student.current_semester }} · Section {{ student.section }}
+    </p>
+  </div>
+  <a class="btn" href="{{ url_for('reports.transcript', student_id=student.id) }}">View transcript</a>
+</div>
+
+{% if courses | selectattr('attendance.is_short') | list %}
+  <div class="notice notice-alert">
+    <strong>Attendance shortage.</strong>
+    One or more courses are below the {{ attendance_threshold }}% requirement. Speak to the faculty before the term ends.
+  </div>
+{% endif %}
+
+<section class="stats" aria-label="At a glance">
+  <div class="stat">
+    <p class="stat-value">{{ overall_attendance.percentage|pct if overall_attendance.percentage is not none else '—' }}</p>
+    <p class="stat-label">Overall attendance</p>
+    <p class="stat-note">{{ overall_attendance.attended }} of {{ overall_attendance.counted }} classes attended</p>
+  </div>
+  <div class="stat">
+    <p class="stat-value">{{ semester.sgpa if semester.sgpa is not none else '—' }}</p>
+    <p class="stat-label">SGPA this semester</p>
+    <p class="stat-note">{{ semester.credits|round(0)|int }} credits graded so far</p>
+  </div>
+  <div class="stat">
+    <p class="stat-value">{{ cgpa if cgpa is not none else '—' }}</p>
+    <p class="stat-label">CGPA</p>
+    <p class="stat-note">{{ credits|round(0)|int }} credits across all semesters</p>
+  </div>
+  <div class="stat">
+    <p class="stat-value">{{ fees.balance|money }}</p>
+    <p class="stat-label">Fees due</p>
+    <p class="stat-note {{ 'is-alert' if fees.overdue }}">{{ fees.overdue|money }} past due</p>
+  </div>
+</section>
+
+<div class="dashboard-grid">
+  <section class="sheet">
+    <div class="sheet-head"><h2 class="sheet-title">This semester</h2></div>
+    {% if courses %}
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Course</th><th>Faculty</th><th class="col-meter">Attendance</th><th class="num">Grade</th></tr></thead>
+          <tbody>
+            {% for row in courses %}
+              <tr>
+                <td>
+                  <a class="cell-primary link" href="{{ url_for('courses.detail', course_id=row.course.id) }}">{{ row.course.code }}</a>
+                  <span class="cell-secondary">{{ row.course.title }}</span>
+                </td>
+                <td class="muted">{{ row.course.teacher.name if row.course.teacher else 'To be assigned' }}</td>
+                <td class="col-meter">{{ meter(row.attendance.percentage, attendance_threshold) }}</td>
+                <td class="num">
+                  {% if row.result.percentage is not none %}
+                    <span class="grade">{{ row.result.letter }}</span>
+                    <span class="cell-secondary">{{ row.result.percentage|pct }}</span>
+                  {% else %}
+                    <span class="muted">—</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty">
+        <p class="empty-title">No enrolments yet</p>
+        <p class="empty-text">The registrar has not enrolled you in any courses for this semester.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="sheet">
+    <div class="sheet-head"><h2 class="sheet-title">Fees</h2></div>
+    <div class="sheet-pad">
+      <dl class="detail-list detail-list--tight">
+        <div><dt>Invoiced</dt><dd class="num">{{ fees.invoiced|money }}</dd></div>
+        <div><dt>Paid</dt><dd class="num">{{ fees.paid|money }}</dd></div>
+        <div><dt>Balance</dt><dd class="num strong">{{ fees.balance|money }}</dd></div>
+      </dl>
+      <a class="btn btn-block" href="{{ url_for('finance.index') }}">Open my fee ledger</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% from "_macros.html" import empty_state %}
+{% block title %}Courses{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{{ 'My courses' if current_user.role == 'student' else 'Course catalogue' }}</h1>
+    <p class="page-sub">
+      {% if current_user.role == 'admin' %}Every course offered this session, with faculty and seat usage.
+      {% elif current_user.role == 'teacher' %}The classes assigned to you this session.
+      {% else %}The classes you are enrolled in this session.{% endif %}
+    </p>
+  </div>
+  {% if current_user.role == 'admin' %}
+    <a class="btn btn-primary" href="{{ url_for('courses.new') }}">Add a course</a>
+  {% endif %}
+</div>
+
+<section class="sheet">
+  {% if courses %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>Code</th>
+            <th>Course</th>
+            <th>Faculty</th>
+            <th class="num">Credits</th>
+            <th>Semester</th>
+            {% if current_user.role != 'student' %}<th>Seats</th>{% endif %}
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for course in courses %}
+            <tr>
+              <td class="mono">{{ course.code }}</td>
+              <td>
+                <a class="cell-primary link" href="{{ url_for('courses.detail', course_id=course.id) }}">{{ course.title }}</a>
+                <span class="cell-secondary">{{ course.department }}</span>
+              </td>
+              <td class="muted">{{ course.teacher.name if course.teacher else 'Unassigned' }}</td>
+              <td class="num">{{ course.credits }}</td>
+              <td class="muted">Sem {{ course.semester }}</td>
+              {% if current_user.role != 'student' %}
+                <td>
+                  <span class="seat-count">{{ course.registered_count }} / {{ course.capacity }}</span>
+                  <span class="seat-track"><span style="width: {{ (course.registered_count / course.capacity * 100) if course.capacity else 0 }}%"></span></span>
+                </td>
+              {% endif %}
+              <td class="row-actions">
+                {% if current_user.role == 'admin' %}
+                  <a class="btn btn-sm btn-ghost" href="{{ url_for('courses.edit', course_id=course.id) }}">Edit</a>
+                {% endif %}
+                <a class="btn btn-sm" href="{{ url_for('courses.detail', course_id=course.id) }}">Open</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    {{ empty_state('No courses yet', 'Add the first course to the catalogue.' if current_user.role == 'admin' else 'Nothing has been assigned to you for this session.', url_for('courses.new') if current_user.role == 'admin' else None, 'Add a course') }}
+  {% endif %}
+</section>
+{% endblock %}

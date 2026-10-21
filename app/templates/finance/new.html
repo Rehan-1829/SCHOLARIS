@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Raise an invoice{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Raise an invoice</h1>
+    <p class="page-sub">A fee becomes payable the moment it is raised. Record part-payments against it later.</p>
+  </div>
+  <a class="btn" href="{{ url_for('finance.index') }}">Back to ledger</a>
+</div>
+
+<form method="post" class="sheet form-narrow">
+  {{ csrf_field() }}
+  <div class="sheet-pad">
+    <div class="field">
+      <label for="student_id">Student <span class="req">required</span></label>
+      <select class="input" id="student_id" name="student_id" required>
+        <option value="">Choose a student</option>
+        {% for student in students %}
+          <option value="{{ student.id }}">{{ student.roll_no }} — {{ student.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="title">Description <span class="req">required</span></label>
+      <input class="input" id="title" name="title" placeholder="Tuition fee" required>
+    </div>
+
+    <div class="form-grid">
+      <div class="field">
+        <label for="amount">Amount (₹) <span class="req">required</span></label>
+        <input class="input" id="amount" name="amount" type="number" min="1" step="0.01" placeholder="42000" required>
+      </div>
+      <div class="field">
+        <label for="due_date">Due date <span class="req">required</span></label>
+        <input class="input" id="due_date" name="due_date" type="date" required>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="term">Term</label>
+      <input class="input" id="term" name="term" value="{{ term }}">
+      <p class="help">Leave the session label as it is for the running term.</p>
+    </div>
+  </div>
+  <div class="sheet-pad form-footer">
+    <button class="btn btn-primary" type="submit">Raise invoice</button>
+    <a class="btn btn-ghost" href="{{ url_for('finance.index') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

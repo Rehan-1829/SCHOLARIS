@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% from "_macros.html" import meter, status_pill %}
+{% block title %}Registrar's desk{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Registrar's desk</h1>
+    <p class="page-sub">{{ current_term }} · {{ today.strftime('%A, %d %B %Y') }}</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('students.new') }}">Admit a student</a>
+    <a class="btn btn-primary" href="{{ url_for('courses.new') }}">Add a course</a>
+  </div>
+</div>
+
+<section class="stats" aria-label="At a glance">
+  <div class="stat">
+    <p class="stat-value">{{ active_students }}</p>
+    <p class="stat-label">Students on roll</p>
+    <p class="stat-note">{{ total_students - active_students }} inactive in the archive</p>
+  </div>
+  <div class="stat">
+    <p class="stat-value">{{ active_courses }}</p>
+    <p class="stat-label">Courses running</p>
+    <p class="stat-note">{{ open_enrollments }} enrolments this term</p>
+  </div>
+  <div class="stat">
+    <p class="stat-value">{{ collected|money }}</p>
+    <p class="stat-label">Fees collected</p>
+    <p class="stat-note">of {{ invoiced|money }} invoiced</p>
+  </div>
+  <div class="stat">
+    <p class="stat-value">{{ outstanding|money }}</p>
+    <p class="stat-label">Outstanding</p>
+    <p class="stat-note {{ 'is-alert' if overdue }}">{{ overdue|length }} invoice{{ 's' if overdue|length != 1 }} past due</p>
+  </div>
+</section>
+
+<div class="dashboard-grid">
+  <section class="sheet">
+    <div class="sheet-head">
+      <h2 class="sheet-title">Attendance health</h2>
+      <a class="small-link" href="{{ url_for('reports.attendance_shortage') }}">Shortage report</a>
+    </div>
+    {% if health %}
+      <table class="data">
+        <thead>
+          <tr><th>Course</th><th class="num">Registers</th><th class="col-meter">Attendance</th></tr>
+        </thead>
+        <tbody>
+          {% for row in health %}
+            <tr>
+              <td>
+                <span class="cell-primary">{{ row.code }}</span>
+                <span class="cell-secondary">{{ row.title }}</span>
+              </td>
+              <td class="num muted">{{ row.sessions }}</td>
+              <td class="col-meter">{{ meter(row.percentage, attendance_threshold) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty">
+        <p class="empty-title">No registers marked yet</p>
+        <p class="empty-text">Open a course and take attendance to start building the history.</p>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="sheet">
+    <div class="sheet-head"><h2 class="sheet-title">Fees</h2></div>
+    <div class="sheet-pad">
+      <div class="collection">
+        <div class="collection-bar">
+          <span style="width: {{ (collected / invoiced * 100) if invoiced else 0 }}%"></span>
+        </div>
+        <div class="collection-legend">
+          <span>{{ collected|money }} received</span>
+          <span>{{ outstanding|money }} to collect</span>
+        </div>
+      </div>
+
+      <h3 class="subhead">Past due</h3>
+      {% if overdue %}
+        <ul class="compact-list">
+          {% for invoice in overdue[:4] %}
+            <li>
+              <a href="{{ url_for('finance.detail', invoice_id=invoice.id) }}">
+                <span class="cell-primary">{{ invoice.student.name }}</span>
+                <span class="cell-secondary">{{ invoice.title }} · due {{ invoice.due_date|day }}</span>
+              </a>
+              <span class="num">{{ invoice.balance|money }}</span>
+            </li>
+          {% endfor %}
+        </ul>
+        {% if overdue|length > 4 %}
+          <a class="small-link" href="{{ url_for('finance.index', status='overdue') }}">All {{ overdue|length }} overdue invoices</a>
+        {% endif %}
+      {% else %}
+        <p class="muted small-text">Every invoice is settled or on time.</p>
+      {% endif %}
+    </div>
+  </section>
+</div>
+
+<section class="sheet">
+  <div class="sheet-head">
+    <h2 class="sheet-title">Recent receipts</h2>
+    <a class="small-link" href="{{ url_for('finance.index') }}">Open the ledger</a>
+  </div>
+  {% if recent_payments %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead><tr><th>Receipt</th><th>Student</th><th>Against</th><th>Method</th><th class="num">Amount</th><th>Date</th></tr></thead>
+        <tbody>
+          {% for payment in recent_payments %}
+            <tr>
+              <td><a class="mono link" href="{{ url_for('finance.receipt', payment_id=payment.id) }}">{{ payment.receipt_no }}</a></td>
+              <td>
+                <span class="cell-primary">{{ payment.invoice.student.name }}</span>
+                <span class="cell-secondary">{{ payment.invoice.student.roll_no }}</span>
+              </td>
+              <td>{{ payment.invoice.title }}</td>
+              <td class="muted">{{ payment.method|method }}</td>
+              <td class="num">{{ payment.amount|money }}</td>
+              <td class="muted">{{ payment.paid_on|day }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty"><p class="empty-title">No payments yet</p><p class="empty-text">Receipts will appear here as the office records them.</p></div>
+  {% endif %}
+</section>
+{% endblock %}

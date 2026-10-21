@@ -1,0 +1,69 @@
+{% macro csrf_field() -%}
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+{%- endmacro %}
+
+{% macro field(name, label, value='', type='text', required=False, placeholder='', help='', autocomplete='') -%}
+<div class="field">
+  <label for="{{ name }}">{{ label }}{% if required %} <span class="req">required</span>{% endif %}</label>
+  <input class="input" id="{{ name }}" name="{{ name }}" type="{{ type }}"
+         value="{{ value if value is not none else '' }}"
+         {% if required %}required{% endif %}
+         {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+         {% if autocomplete %}autocomplete="{{ autocomplete }}"{% endif %}>
+  {% if help %}<p class="help">{{ help }}</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro select_field(name, label, options, selected='', required=False, help='', blank=None) -%}
+<div class="field">
+  <label for="{{ name }}">{{ label }}{% if required %} <span class="req">required</span>{% endif %}</label>
+  <select class="input" id="{{ name }}" name="{{ name }}" {% if required %}required{% endif %}>
+    {% if blank is not none %}<option value="">{{ blank }}</option>{% endif %}
+    {% for option in options %}
+      {% if option is mapping %}
+        <option value="{{ option.value }}" {{ 'selected' if option.value|string == selected|string }}>{{ option.label }}</option>
+      {% else %}
+        <option value="{{ option }}" {{ 'selected' if option|string == selected|string }}>{{ option }}</option>
+      {% endif %}
+    {% endfor %}
+  </select>
+  {% if help %}<p class="help">{{ help }}</p>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro status_pill(status) -%}
+<span class="pill pill-{{ status }}">{{ status|capitalize }}</span>
+{%- endmacro %}
+
+{% macro meter(value, threshold=75) -%}
+<div class="meter">
+  <div class="meter-track">
+    <div class="meter-fill {{ 'is-short' if value is not none and value < threshold }}"
+         style="width: {{ value if value is not none else 0 }}%"></div>
+    <span class="meter-tick" title="Minimum attendance {{ threshold }}%"></span>
+  </div>
+  <span class="meter-value">{{ value|pct if value is not none else '—' }}</span>
+</div>
+{%- endmacro %}
+
+{% macro empty_state(title, text, action_url=None, action_label=None) -%}
+<div class="empty">
+  <p class="empty-title">{{ title }}</p>
+  <p class="empty-text">{{ text }}</p>
+  {% if action_url %}<a class="btn btn-sm" href="{{ action_url }}">{{ action_label }}</a>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro pager_nav(pager) -%}
+{% if pager.pages > 1 %}
+<nav class="pager" aria-label="Pages">
+  {% if pager.has_prev %}
+    <a class="btn btn-sm" href="{{ url_for(request.endpoint, page=pager.prev_num, q=request.args.get('q'), program=request.args.get('program'), status=request.args.get('status')) }}">Previous</a>
+  {% endif %}
+  <span class="pager-info">Page {{ pager.page }} of {{ pager.pages }} · {{ pager.total }} records</span>
+  {% if pager.has_next %}
+    <a class="btn btn-sm" href="{{ url_for(request.endpoint, page=pager.next_num, q=request.args.get('q'), program=request.args.get('program'), status=request.args.get('status')) }}">Next</a>
+  {% endif %}
+</nav>
+{% endif %}
+{%- endmacro %}

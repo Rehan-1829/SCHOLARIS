@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field, empty_state %}
+{% block title %}Marks · {{ assessment.name }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="mono course-kicker">{{ course.code }} · {{ assessment.kind|capitalize }}</p>
+    <h1 class="page-title">{{ assessment.name }}</h1>
+    <p class="page-sub">
+      Out of {{ assessment.max_score|round(0)|int }} · worth {{ assessment.weight|round(0)|int }}% of the final grade
+      {% if assessment.scheduled_on %} · {{ assessment.scheduled_on|day }}{% endif %}
+    </p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('courses.grades', course_id=course.id) }}">Grade sheet</a>
+    <a class="btn" href="{{ url_for('courses.detail', course_id=course.id) }}">Back to course</a>
+  </div>
+</div>
+
+{% if rows %}
+  <form method="post" class="sheet">
+    {{ csrf_field() }}
+    <div class="sheet-head">
+      <h2 class="sheet-title">{{ rows|length }} students</h2>
+      <span class="small-text muted">Leave a box empty if the student has not attempted it.</span>
+    </div>
+    <div class="table-wrap">
+      <table class="data marks-table">
+        <thead>
+          <tr><th>Roll</th><th>Student</th><th class="num">Existing</th><th class="col-marks">Marks (out of {{ assessment.max_score|round(0)|int }})</th></tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td class="mono">{{ row.student.roll_no }}</td>
+              <td class="cell-primary">{{ row.student.name }}</td>
+              <td class="num muted">{{ row.score.marks|round(1) if row.score and row.score.marks is not none else '—' }}</td>
+              <td>
+                <input class="input input--marks" type="number" name="marks_{{ row.student.id }}"
+                       value="{{ row.score.marks|round(1) if row.score and row.score.marks is not none else '' }}"
+                       min="0" max="{{ assessment.max_score }}" step="0.5" inputmode="decimal"
+                       aria-label="Marks for {{ row.student.name }}">
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="sheet-pad form-footer">
+      <button class="btn btn-primary" type="submit">Save marks</button>
+    </div>
+  </form>
+{% else %}
+  <section class="sheet">
+    {{ empty_state('No students enrolled', 'This course has no active roster yet.', url_for('courses.detail', course_id=course.id), 'Back to course') }}
+  </section>
+{% endif %}
+{% endblock %}

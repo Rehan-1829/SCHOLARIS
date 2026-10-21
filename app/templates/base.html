@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Scholaris{% endblock %} · {{ college_name }}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='fonts/fonts.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+{% block body %}
+<div class="shell">
+  <aside class="rail" id="rail">
+    <div class="rail-top">
+      <a class="brand" href="{{ url_for('dashboard.index') }}">
+        <span class="brand-mark">S</span>
+        <span class="brand-text">
+          <span class="brand-name">Scholaris</span>
+          <span class="brand-sub">Student records office</span>
+        </span>
+      </a>
+
+      <nav class="nav" aria-label="Main">
+        {% set section = request.endpoint.split('.')[0] if request.endpoint else '' %}
+        <a class="nav-link {{ 'is-active' if request.endpoint == 'dashboard.index' }}" href="{{ url_for('dashboard.index') }}">
+          <span class="nav-glyph">◧</span> Desk
+        </a>
+        {% if current_user.role in ('admin', 'teacher') %}
+          <a class="nav-link {{ 'is-active' if section == 'students' }}" href="{{ url_for('students.index') }}">
+            <span class="nav-glyph">☰</span> Students
+          </a>
+        {% endif %}          <a class="nav-link {{ 'is-active' if section == 'courses' }}" href="{{ url_for('courses.index') }}">
+          <span class="nav-glyph">▤</span> {{ 'My courses' if current_user.role == 'student' else 'Courses' }}
+        </a>
+        {% if current_user.role in ('admin', 'student') %}
+          <a class="nav-link {{ 'is-active' if section == 'finance' }}" href="{{ url_for('finance.index') }}">
+            <span class="nav-glyph">₹</span> {{ 'My fees' if current_user.role == 'student' else 'Fees' }}
+          </a>
+        {% endif %}
+        {% if current_user.role == 'admin' %}
+          <a class="nav-link {{ 'is-active' if request.endpoint == 'reports.attendance_shortage' }}" href="{{ url_for('reports.attendance_shortage') }}">
+            <span class="nav-glyph">◔</span> Shortage report
+          </a>
+        {% endif %}
+        {% if current_user.role == 'student' and current_user.student %}
+          <a class="nav-link {{ 'is-active' if request.endpoint == 'reports.transcript' }}" href="{{ url_for('reports.transcript', student_id=current_user.student.id) }}">
+            <span class="nav-glyph">▦</span> Transcript
+          </a>
+        {% endif %}
+        <a class="nav-link {{ 'is-active' if section == 'auth' }}" href="{{ url_for('auth.account') }}">
+          <span class="nav-glyph">◍</span> Account
+        </a>
+      </nav>
+    </div>
+
+    <div class="rail-foot">
+      <p>{{ college_name }}</p>
+      <p class="mono">{{ current_term }}</p>
+    </div>
+  </aside>
+
+  <div class="workspace">
+    <header class="topbar">
+      <button class="rail-toggle" type="button" data-rail-toggle aria-label="Toggle navigation">☰</button>
+      <span class="term-chip">{{ current_term }}</span>
+      <span class="topbar-spacer"></span>
+      <div class="who">
+        <span class="avatar" aria-hidden="true">{{ current_user.initials }}</span>
+        <span class="who-text">
+          <span class="who-name">{{ current_user.full_name }}</span>
+          <span class="who-role">{{ current_user.role_label }}</span>
+        </span>
+      </div>
+      <form class="signout" method="post" action="{{ url_for('auth.logout') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-ghost btn-sm" type="submit">Sign out</button>
+      </form>
+    </header>
+
+    <main class="page">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flashes" role="status">
+            {% for category, message in messages %}
+              <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}
+<script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_pill %}
+{% block title %}Fees{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">{{ 'My fees' if current_user.role == 'student' else 'Fee ledger' }}</h1>
+    <p class="page-sub">
+      {% if current_user.role == 'student' %}Invoices raised against {{ student.roll_no }} for {{ current_term }}.
+      {% else %}Invoices raised this session, payments recorded and anything past due.{% endif %}
+    </p>
+  </div>
+  {% if current_user.role == 'admin' %}
+    <a class="btn btn-primary" href="{{ url_for('finance.new') }}">Raise an invoice</a>
+  {% endif %}
+</div>
+
+{% if current_user.role == 'student' %}
+  <section class="stats" aria-label="Fee summary">
+    <div class="stat">
+      <p class="stat-value">{{ summary.invoiced|money }}</p>
+      <p class="stat-label">Invoiced</p>
+      <p class="stat-note">{{ invoices|length }} invoice{{ '' if invoices|length == 1 else 's' }}</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">{{ summary.paid|money }}</p>
+      <p class="stat-label">Paid</p>
+      <p class="stat-note">Receipts available below</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">{{ summary.balance|money }}</p>
+      <p class="stat-label">Balance</p>
+      <p class="stat-note {{ 'is-alert' if summary.overdue }}">{{ summary.overdue|money }} past due</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">{{ invoices|selectattr('status', 'equalto', 'paid')|list|length }}</p>
+      <p class="stat-label">Settled</p>
+      <p class="stat-note">of {{ invoices|length }} invoices</p>
+    </div>
+  </section>
+{% else %}
+  <form class="filter-bar" method="get" action="{{ url_for('finance.index') }}">
+    <div class="filter-search">
+      <label class="sr-only" for="q">Search</label>
+      <input class="input" id="q" name="q" value="{{ q }}" placeholder="Student name or roll number">
+    </div>
+    <label class="sr-only" for="status">Status</label>
+    <select class="input" id="status" name="status">
+      <option value="">Any status</option>
+      {% for item in ['due', 'partial', 'overdue', 'paid'] %}
+        <option value="{{ item }}" {{ 'selected' if item == status }}>{{ item|capitalize }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn" type="submit">Filter</button>
+    {% if q or status %}<a class="btn btn-ghost" href="{{ url_for('finance.index') }}">Clear</a>{% endif %}
+  </form>
+
+  <section class="stats" aria-label="Ledger summary">
+    <div class="stat">
+      <p class="stat-value">{{ total_invoiced|money }}</p>
+      <p class="stat-label">Invoiced</p>
+      <p class="stat-note">{{ invoices|length }} invoice{{ '' if invoices|length == 1 else 's' }} in view</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">{{ total_paid|money }}</p>
+      <p class="stat-label">Collected</p>
+      <p class="stat-note">Recorded against these invoices</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">{{ total_balance|money }}</p>
+      <p class="stat-label">Balance</p>
+      <p class="stat-note">Still to collect</p>
+    </div>
+    <div class="stat">
+      <p class="stat-value">{{ overdue }}</p>
+      <p class="stat-label">Past due</p>
+      <p class="stat-note {{ 'is-alert' if overdue }}">Need follow-up</p>
+    </div>
+  </section>
+{% endif %}
+
+<section class="sheet">
+  <div class="sheet-head">
+    <h2 class="sheet-title">{{ 'Your invoices' if current_user.role == 'student' else 'Invoices' }}</h2>
+  </div>
+  {% if invoices %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>Invoice</th>
+            {% if current_user.role == 'admin' %}<th>Student</th>{% endif %}
+            <th>Term</th>
+            <th>Due</th>
+            <th class="num">Amount</th>
+            <th class="num">Paid</th>
+            <th class="num">Balance</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for invoice in invoices %}
+            <tr>
+              <td>
+                <a class="cell-primary link" href="{{ url_for('finance.detail', invoice_id=invoice.id) }}">{{ invoice.title }}</a>
+                <span class="cell-secondary mono">INV-{{ '%05d'|format(invoice.id) }}</span>
+              </td>
+              {% if current_user.role == 'admin' %}
+                <td>
+                  <span class="cell-primary">{{ invoice.student.name }}</span>
+                  <span class="cell-secondary mono">{{ invoice.student.roll_no }}</span>
+                </td>
+              {% endif %}
+              <td class="muted">{{ invoice.term }}</td>
+              <td class="muted">{{ invoice.due_date|day }}</td>
+              <td class="num">{{ invoice.amount|money }}</td>
+              <td class="num muted">{{ invoice.paid_total|money }}</td>
+              <td class="num strong">{{ invoice.balance|money }}</td>
+              <td>{{ status_pill(invoice.status) }}</td>
+              <td class="row-actions">
+                <a class="btn btn-sm" href="{{ url_for('finance.detail', invoice_id=invoice.id) }}">Open</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="empty">
+      <p class="empty-title">No invoices in view</p>
+      <p class="empty-text">{{ 'You have no fees on record yet.' if current_user.role == 'student' else 'Raise an invoice to begin the ledger.' }}</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

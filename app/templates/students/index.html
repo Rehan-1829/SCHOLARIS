@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% from "_macros.html" import status_pill, pager_nav, empty_state %}
+{% block title %}Students{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Student register</h1>
+    <p class="page-sub">{{ pagination.total }} record{{ '' if pagination.total == 1 else 's' }} on file{% if q or program or status %} matching your filters{% endif %}.</p>
+  </div>
+  {% if current_user.role == 'admin' %}
+    <a class="btn btn-primary" href="{{ url_for('students.new') }}">Admit a student</a>
+  {% endif %}
+</div>
+
+<form class="filter-bar" method="get" action="{{ url_for('students.index') }}">
+  <div class="filter-search">
+    <label class="sr-only" for="q">Search</label>
+    <input class="input" id="q" name="q" value="{{ q }}" placeholder="Name, roll number or email">
+  </div>
+  <label class="sr-only" for="program">Programme</label>
+  <select class="input" id="program" name="program">
+    <option value="">All programmes</option>
+    {% for item in programs %}
+      <option value="{{ item }}" {{ 'selected' if item == program }}>{{ item }}</option>
+    {% endfor %}
+  </select>
+  <label class="sr-only" for="status">Status</label>
+  <select class="input" id="status" name="status">
+    <option value="">Any status</option>
+    {% for item in ['active', 'graduated', 'withdrawn'] %}
+      <option value="{{ item }}" {{ 'selected' if item == status }}>{{ item|capitalize }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn" type="submit">Filter</button>
+  {% if q or program or status %}<a class="btn btn-ghost" href="{{ url_for('students.index') }}">Clear</a>{% endif %}
+</form>
+
+<section class="sheet">
+  {% if students %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Programme</th>
+            <th>Batch</th>
+            <th>Contact</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for student in students %}
+            <tr>
+              <td>
+                <a class="cell-primary link" href="{{ url_for('students.detail', student_id=student.id) }}">{{ student.name }}</a>
+                <span class="cell-secondary mono">{{ student.roll_no }}</span>
+              </td>
+              <td>{{ student.program }}</td>
+              <td class="muted">{{ student.batch_year }} · Sem {{ student.current_semester }}</td>
+              <td class="muted">
+                <span class="mono small-text">{{ student.email }}</span>
+                {% if student.phone %}<span class="cell-secondary mono">{{ student.phone }}</span>{% endif %}
+              </td>
+              <td>{{ status_pill(student.status) }}</td>
+              <td class="row-actions">
+                {% if current_user.role == 'admin' %}
+                  <a class="btn btn-sm btn-ghost" href="{{ url_for('students.edit', student_id=student.id) }}">Edit</a>
+                {% endif %}
+                <a class="btn btn-sm" href="{{ url_for('students.detail', student_id=student.id) }}">Open</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {{ pager_nav(pagination) }}
+  {% else %}
+    {{ empty_state('No students found', 'Try a different search, or admit the first student to get started.', url_for('students.new') if current_user.role == 'admin' else None, 'Admit a student') }}
+  {% endif %}
+</section>
+{% endblock %}

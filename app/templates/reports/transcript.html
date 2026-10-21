@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Transcript · {{ student.name }}{% endblock %}
+
+{% block content %}
+<div class="page-head no-print">
+  <div>
+    <h1 class="page-title">Academic transcript</h1>
+    <p class="page-sub">{{ student.name }} · <span class="mono">{{ student.roll_no }}</span></p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('students.detail', student_id=student.id) }}">Back to profile</a>
+    <button class="btn btn-primary" type="button" data-print>Print transcript</button>
+  </div>
+</div>
+
+<article class="document document--transcript">
+  <header class="document-head">
+    <div>
+      <p class="document-college">{{ college_name }}</p>
+      <p class="document-office">Office of the Registrar · Statement of grades</p>
+    </div>
+    <div class="document-ref">
+      <p class="mono">TR-{{ student.roll_no }}</p>
+      <p class="document-date">Issued {{ today|day }}</p>
+    </div>
+  </header>
+
+  <h2 class="document-title">Consolidated transcript</h2>
+
+  <div class="document-meta">
+    <div><span class="meta-label">Student</span><span class="meta-value">{{ student.name }}</span></div>
+    <div><span class="meta-label">Roll number</span><span class="meta-value mono">{{ student.roll_no }}</span></div>
+    <div><span class="meta-label">Programme</span><span class="meta-value">{{ student.program }}</span></div>
+    <div><span class="meta-label">Batch</span><span class="meta-value">{{ student.batch_year }}</span></div>
+  </div>
+
+  {% for result in results %}
+    <section class="transcript-block">
+      <h3 class="transcript-term">Semester {{ result.semester }}</h3>
+      <table class="document-table">
+        <thead>
+          <tr><th>Code</th><th>Course</th><th class="num">Credits</th><th class="num">Percentage</th><th class="num">Grade</th><th class="num">Points</th></tr>
+        </thead>
+        <tbody>
+          {% for row in result.rows %}
+            <tr>
+              <td class="mono">{{ row.course.code }}</td>
+              <td>{{ row.course.title }}</td>
+              <td class="num">{{ row.credits }}</td>
+              <td class="num">{{ row.result.percentage|pct if row.result.percentage is not none else '—' }}</td>
+              <td class="num">{{ row.result.letter }}</td>
+              <td class="num">{{ row.result.points|round(0)|int if row.result.percentage is not none else '—' }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2">Semester {{ result.semester }} result</td>
+            <td class="num">{{ result.credits|round(0)|int }}</td>
+            <td colspan="2">SGPA</td>
+            <td class="num">{{ result.sgpa if result.sgpa is not none else '—' }}</td>
+          </tr>
+        </tfoot>
+      </table>
+    </section>
+  {% else %}
+    <p class="document-note">No graded courses on file yet.</p>
+  {% endfor %}
+
+  <div class="transcript-summary">
+    <div><span class="meta-label">Credits earned</span><span class="transcript-figure">{{ credits|round(0)|int }}</span></div>
+    <div><span class="meta-label">Cumulative GPA</span><span class="transcript-figure">{{ cgpa if cgpa is not none else '—' }}</span></div>
+  </div>
+
+  <footer class="document-foot">
+    <div class="document-sign">
+      <span class="sign-line"></span>
+      <p>Registrar</p>
+    </div>
+    <div class="document-seal" aria-hidden="true">S</div>
+  </footer>
+
+  <p class="document-note">
+    Grades follow the ten-point scale: O 90+, A+ 80–89, A 70–79, B+ 60–69, B 50–59, C 40–49, F below 40.
+    SGPA is credit-weighted; CGPA is the credit-weighted average across semesters.
+  </p>
+</article>
+{% endblock %}

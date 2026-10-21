@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_macros.html" import meter, empty_state %}
+{% block title %}My classes{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">My classes</h1>
+    <p class="page-sub">
+      {% if teacher %}{{ teacher.designation }}, {{ teacher.department }} · {{ teacher.employee_no }}{% else %}No faculty record linked to this account.{% endif %}
+    </p>
+  </div>
+  <a class="btn" href="{{ url_for('students.index') }}">Find a student</a>
+</div>
+
+{% if cards %}
+  <div class="class-grid">
+    {% for card in cards %}
+      <section class="sheet class-card">
+        <div class="class-card-head">
+          <div>
+            <p class="mono class-code">{{ card.course.code }}</p>
+            <h2 class="class-title">{{ card.course.title }}</h2>
+          </div>
+          <span class="credit-badge">{{ card.course.credits }} cr</span>
+        </div>
+        <div class="class-meta">
+          <span>Semester {{ card.course.semester }}</span>
+          <span>{{ card.roster }} student{{ '' if card.roster == 1 else 's' }}</span>
+          <span>{{ card.sessions }} register{{ '' if card.sessions == 1 else 's' }}</span>
+        </div>
+        <div class="class-attendance">
+          <span class="label">Average attendance</span>
+          {{ meter(card.attendance.percentage, attendance_threshold) }}
+        </div>
+        <div class="class-actions">
+          <a class="btn btn-sm" href="{{ url_for('courses.attendance', course_id=card.course.id) }}">Take register</a>
+          <a class="btn btn-sm" href="{{ url_for('courses.detail', course_id=card.course.id) }}">Marks & roster</a>
+        </div>
+      </section>
+    {% endfor %}
+  </div>
+{% else %}
+  <section class="sheet">
+    {{ empty_state('No courses assigned', 'The registrar has not assigned any courses to this account yet.') }}
+  </section>
+{% endif %}
+{% endblock %}

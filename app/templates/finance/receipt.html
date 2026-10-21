@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Receipt {{ payment.receipt_no }}{% endblock %}
+
+{% block content %}
+<div class="page-head no-print">
+  <div>
+    <h1 class="page-title">Receipt {{ payment.receipt_no }}</h1>
+    <p class="page-sub">Recorded {{ payment.paid_on|day }} · {{ payment.invoice.student.name }}</p>
+  </div>
+  <div class="actions">
+    <a class="btn" href="{{ url_for('finance.detail', invoice_id=invoice.id) }}">Back to invoice</a>
+    <button class="btn btn-primary" type="button" data-print>Print receipt</button>
+  </div>
+</div>
+
+<article class="document">
+  <header class="document-head">
+    <div>
+      <p class="document-college">{{ college_name }}</p>
+      <p class="document-office">Office of the Registrar · Fee section</p>
+    </div>
+    <div class="document-ref">
+      <p class="mono">{{ payment.receipt_no }}</p>
+      <p class="document-date">{{ payment.paid_on|day }}</p>
+    </div>
+  </header>
+
+  <h2 class="document-title">Fee receipt</h2>
+
+  <div class="document-meta">
+    <div><span class="meta-label">Received from</span><span class="meta-value">{{ invoice.student.name }}</span></div>
+    <div><span class="meta-label">Roll number</span><span class="meta-value mono">{{ invoice.student.roll_no }}</span></div>
+    <div><span class="meta-label">Programme</span><span class="meta-value">{{ invoice.student.program }}, semester {{ invoice.student.current_semester }}</span></div>
+    <div><span class="meta-label">Term</span><span class="meta-value">{{ invoice.term }}</span></div>
+  </div>
+
+  <table class="document-table">
+    <thead><tr><th>Particulars</th><th>Invoice</th><th class="num">Amount</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>{{ invoice.title }}</td>
+        <td class="mono">INV-{{ '%05d'|format(invoice.id) }}</td>
+        <td class="num">{{ payment.amount|money }}</td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr><td colspan="2">Total received</td><td class="num">{{ payment.amount|money }}</td></tr>
+    </tfoot>
+  </table>
+
+  <div class="document-words">
+    <p><span class="meta-label">Payment method</span> {{ payment.method|method }}{% if payment.reference %} · reference <span class="mono">{{ payment.reference }}</span>{% endif %}</p>
+    <p><span class="meta-label">Invoice balance after this payment</span> {{ invoice.balance|money }}</p>
+  </div>
+
+  <footer class="document-foot">
+    <div class="document-sign">
+      <span class="sign-line"></span>
+      <p>Accountant, fee section</p>
+    </div>
+    <span class="stamp stamp-paid">Paid</span>
+  </footer>
+
+  <p class="document-note">This receipt is generated from the college records system. Retain it for your records.</p>
+</article>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field %}
+{% block title %}Account{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Your account</h1>
+    <p class="page-sub">Signed in as {{ current_user.email }} · {{ current_user.role_label }}</p>
+  </div>
+</div>
+
+<div class="two-col">
+  <section class="sheet">
+    <div class="sheet-head"><h2 class="sheet-title">Details</h2></div>
+    <div class="sheet-pad">
+      <dl class="detail-list">
+        <div><dt>Name</dt><dd>{{ current_user.full_name }}</dd></div>
+        <div><dt>Email</dt><dd class="mono">{{ current_user.email }}</dd></div>
+        <div><dt>Role</dt><dd>{{ current_user.role_label }}</dd></div>
+        {% if current_user.student %}
+          <div><dt>Roll number</dt><dd class="mono">{{ current_user.student.roll_no }}</dd></div>
+          <div><dt>Programme</dt><dd>{{ current_user.student.program }} · Semester {{ current_user.student.current_semester }}</dd></div>
+        {% elif current_user.teacher %}
+          <div><dt>Employee number</dt><dd class="mono">{{ current_user.teacher.employee_no }}</dd></div>
+          <div><dt>Department</dt><dd>{{ current_user.teacher.department }}</dd></div>
+        {% endif %}
+        <div><dt>Last sign-in</dt><dd>{{ current_user.last_login_at.strftime('%d %b %Y, %H:%M') if current_user.last_login_at else 'First session' }}</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <div class="sheet-head"><h2 class="sheet-title">Change password</h2></div>
+    <form class="sheet-pad" method="post">
+      {{ csrf_field() }}
+      <div class="field">
+        <label for="current_password">Current password</label>
+        <input class="input" id="current_password" name="current_password" type="password" autocomplete="current-password" required>
+      </div>
+      <div class="field">
+        <label for="new_password">New password</label>
+        <input class="input" id="new_password" name="new_password" type="password" autocomplete="new-password" minlength="8" required>
+        <p class="help">At least 8 characters.</p>
+      </div>
+      <div class="field">
+        <label for="confirm_password">Confirm new password</label>
+        <input class="input" id="confirm_password" name="confirm_password" type="password" autocomplete="new-password" minlength="8" required>
+      </div>
+      <button class="btn btn-primary" type="submit">Update password</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

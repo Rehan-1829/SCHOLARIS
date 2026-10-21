@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% from "_macros.html" import meter %}
+{% block title %}Shortage report{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Attendance shortage</h1>
+    <p class="page-sub">Students below the {{ threshold }}% requirement in at least one course this semester.</p>
+  </div>
+  <a class="btn" href="{{ url_for('dashboard.index') }}">Back to desk</a>
+</div>
+
+<section class="sheet">
+  {% if flagged %}
+    <div class="table-wrap">
+      <table class="data">
+        <thead>
+          <tr><th>Student</th><th>Course</th><th class="col-meter">Attendance</th><th class="num">Classes needed</th></tr>
+        </thead>
+        <tbody>
+          {% for entry in flagged %}
+            {% for row in entry.rows %}
+              <tr>
+                {% if loop.first %}
+                  <td rowspan="{{ entry.rows|length }}" class="align-top">
+                    <a class="cell-primary link" href="{{ url_for('students.detail', student_id=entry.student.id) }}">{{ entry.student.name }}</a>
+                    <span class="cell-secondary mono">{{ entry.student.roll_no }}</span>
+                  </td>
+                {% endif %}
+                <td>
+                  <span class="cell-primary mono">{{ row.course.code }}</span>
+                  <span class="cell-secondary">{{ row.course.title }}</span>
+                </td>
+                <td class="col-meter">{{ meter(row.summary.percentage, threshold) }}</td>
+                <td class="num">{{ row.summary.classes_needed }}</td>
+              </tr>
+            {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="sheet-foot">
+      <span class="small-text muted">{{ flagged|length }} student{{ '' if flagged|length == 1 else 's' }} flagged · {{ threshold }}% minimum · excused absences excluded</span>
+    </div>
+  {% else %}
+    <div class="empty">
+      <p class="empty-title">Nobody is short</p>
+      <p class="empty-text">Every enrolled student is at or above {{ threshold }}% attendance.</p>
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

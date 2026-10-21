@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf_field, empty_state %}
+{% block title %}Register · {{ course.code }}{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <div>
+    <p class="mono course-kicker">{{ course.code }}</p>
+    <h1 class="page-title">Class register</h1>
+    <p class="page-sub">{{ course.title }} · {{ selected_date.strftime('%A, %d %B %Y') }}{% if session %} · register already started{% endif %}</p>
+  </div>
+  <a class="btn" href="{{ url_for('courses.detail', course_id=course.id) }}">Back to course</a>
+</div>
+
+<form class="filter-bar" method="get" action="{{ url_for('courses.attendance', course_id=course.id) }}">
+  <div class="field field--inline">
+    <label for="date">Register date</label>
+    <input class="input" id="date" name="date" type="date" value="{{ selected_date|iso_day }}" max="{{ today|iso_day }}">
+  </div>
+  <button class="btn" type="submit">Load register</button>
+  <a class="btn btn-ghost" href="{{ url_for('courses.attendance', course_id=course.id) }}">Today</a>
+</form>
+
+{% if roster %}
+  <form method="post" action="{{ url_for('courses.attendance', course_id=course.id) }}">
+    {{ csrf_field() }}
+    <input type="hidden" name="session_date" value="{{ selected_date|iso_day }}">
+    <section class="sheet">
+      <div class="sheet-head">
+        <h2 class="sheet-title">{{ roster|length }} students on the roll</h2>
+        <div class="head-tools">
+          <button class="btn btn-sm" type="button" data-mark-all>Mark all present</button>
+        </div>
+      </div>
+
+      <div class="sheet-pad register-topic">
+        <div class="field">
+          <label for="topic">Topic covered</label>
+          <input class="input" id="topic" name="topic" value="{{ session.topic if session and session.topic else '' }}" placeholder="e.g. Normalisation and functional dependencies">
+        </div>
+        <p class="small-text muted">Late counts as attended. Excused absences are left out of the percentage.</p>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data register-table">
+          <thead>
+            <tr><th class="col-roll">Roll</th><th>Student</th><th>Term to date</th><th class="col-mark">Today</th></tr>
+          </thead>
+          <tbody>
+            {% for row in roster %}
+              <tr>
+                <td class="mono">{{ row.student.roll_no }}</td>
+                <td class="cell-primary">{{ row.student.name }}</td>
+                <td class="muted small-text">
+                  {{ row.summary.percentage|pct if row.summary.percentage is not none else '—' }}
+                  <span class="cell-secondary">{{ row.summary.attended }}/{{ row.summary.counted }} classes</span>
+                </td>
+                <td>
+                  <div class="segmented">
+                    {% for choice in choices %}
+                      <label class="seg-option">
+                        <input type="radio" name="status_{{ row.student.id }}" value="{{ choice }}"
+                               {{ 'checked' if row.status == choice }} required>
+                        <span>{{ choice|capitalize }}</span>
+                      </label>
+                    {% endfor %}
+                  </div>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="sheet-pad form-footer">
+        <button class="btn btn-primary" type="submit">Save register</button>
+        <span class="small-text muted">Saving twice on the same date updates that day's register.</span>
+      </div>
+    </section>
+  </form>
+
+  {% if recent %}
+    <section class="sheet">
+      <div class="sheet-head"><h2 class="sheet-title">Earlier registers</h2></div>
+      <div class="table-wrap">
+        <table class="data">
+          <thead><tr><th>Date</th><th>Topic</th><th class="num">Present</th><th></th></tr></thead>
+          <tbody>
+            {% for item in recent %}
+              <tr>
+                <td>{{ item.session_date|day }}</td>
+                <td class="muted">{{ item.topic or 'Class register' }}</td>
+                <td class="num">{{ item.present_count }} / {{ item.records|length }}</td>
+                <td class="row-actions"><a class="btn btn-sm btn-ghost" href="{{ url_for('courses.attendance', course_id=course.id, date=item.session_date|iso_day) }}">Open</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  {% endif %}
+{% else %}
+  <section class="sheet">
+    {{ empty_state('No students enrolled', 'Enrol students before taking the register.', url_for('courses.detail', course_id=course.id), 'Back to course') }}
+  </section>
+{% endif %}
+{% endblock %}
