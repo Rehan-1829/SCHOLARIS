@@ -1,0 +1,119 @@
+SCHOLARIS - STUDENT RECORDS OFFICE
+Sign-in details for the demonstration copy
+===========================================
+
+HOW TO START THE WEBSITE
+------------------------
+1. Double-click  START_SCHOLARIS.bat
+2. A black window opens. Wait for the line:
+       Open this address:  http://127.0.0.1:5000
+3. Your browser opens the sign-in page by itself.
+4. Leave the black window open while you use or demo the site.
+   Closing that window stops the website.
+
+If the browser does not open, type the address above into Chrome, Edge
+or Firefox. If the address uses 5001 instead of 5000, port 5000 was busy;
+use the address printed in the black window.
+
+This is a local website. It runs on this computer only; it is not on
+the internet, and no internet connection is needed to use it.
+
+
+DEMO ACCOUNTS
+-------------
+Role       Email                                     Password
+---------- ----------------------------------------- -------------
+Registrar  registrar@scholaris.edu                    registrar123
+Faculty    lakshmi.venkatesan@scholaris.edu           faculty123
+Student    aarav.mehta@student.scholaris.edu         student123
+
+The registrar account is the best one to start with: it can see every
+screen. Sign out (top right) before trying another role.
+
+
+ALL FACULTY ACCOUNTS  (same password: faculty123)
+-------------------------------------------------
+lakshmi.venkatesan@scholaris.edu   Dr. Lakshmi Venkatesan      Computer Science
+sanjay.bhattacharya@scholaris.edu  Prof. Sanjay Bhattacharya   Computer Science
+rekha.menon@scholaris.edu          Dr. Rekha Menon             Mathematics
+imran.qureshi@scholaris.edu        Prof. Imran Qureshi         Computer Science
+nandita.sanyal@scholaris.edu       Dr. Nandita Sanyal          Humanities
+
+
+ALL STUDENT ACCOUNTS  (same password: student123)
+-------------------------------------------------
+aarav.mehta@student.scholaris.edu        BCA2024001   Aarav Mehta
+ishita.nair@student.scholaris.edu        BCA2024002   Ishita Nair
+rohan.kulkarni@student.scholaris.edu     BCA2024003   Rohan Kulkarni
+sneha.iyer@student.scholaris.edu         BCA2024004   Sneha Iyer
+kabir.shah@student.scholaris.edu         BCA2024005   Kabir Shah
+ananya.deshpande@student.scholaris.edu   BCA2024006   Ananya Deshpande
+vihaan.rao@student.scholaris.edu         BCA2024007   Vihaan Rao
+meera.pillai@student.scholaris.edu       BCA2024008   Meera Pillai
+arjun.sethi@student.scholaris.edu        BCA2024009   Arjun Sethi
+diya.menon@student.scholaris.edu         BCA2024010   Diya Menon
+nikhil.joshi@student.scholaris.edu       BCA2024011   Nikhil Joshi
+tara.bhatt@student.scholaris.edu         BCA2024012   Tara Bhatt
+rehan.ali@student.scholaris.edu          BCA2024013   Rehan Ali
+
+Emails are always  firstname.lastname@student.scholaris.edu
+
+
+WHAT TO SHOW IN EACH ROLE
+-------------------------
+Registrar
+  Desk        -> admissions, fee collection, attendance health
+  Students    -> search the register, open a profile, print a transcript
+  Courses     -> catalogue, seat capacity, enrol a student
+  Fees        -> raise an invoice, record a payment, print a receipt
+  Shortage    -> students below the 75% attendance rule
+
+Faculty
+  Desk        -> only the courses they teach
+  Courses     -> open a course, take the register, enter marks, see grades
+  Marks can only be entered for their own courses.
+
+Student
+  Desk        -> attendance warning, current grades, fee dues
+  Courses     -> attendance and marks per subject
+  My fees     -> dues, payment history, printable receipts
+  Transcript  -> SGPA / CGPA for both semesters
+
+
+IF SOMETHING GOES WRONG
+-----------------------
+Black window closes immediately
+    Right-click START_SCHOLARIS.bat -> Run as administrator is NOT needed.
+    Open the folder, hold Shift and right-click empty space, choose
+    "Open PowerShell window here", then run:
+        .\START_SCHOLARIS.bat
+    The error message will stay visible.
+
+"Python was not found"
+    Use the copy of this folder that contains the "portable" folder.
+    That copy needs nothing installed.
+
+Windows warns "Windows protected your PC" or blocks the .bat file
+    Right-click START_SCHOLARIS.bat, choose Properties, tick "Unblock",
+    then click OK. This only happens to files downloaded from the internet.
+
+Data looks wrong or you changed too much
+    Double-click RESET_DEMO_DATA.bat. It rebuilds the sample college.
+    Close the website window first.
+
+Port already in use
+    The launcher automatically uses 5001, 5002, ... if 5000 is busy.
+    Use the address printed in the black window.
+
+The page looks plain, with the wrong fonts
+    This copy includes its own fonts, so this should not happen. If the
+    file  app\static\fonts\fonts.css  is missing, the browser will fall
+    back to Georgia and Segoe UI, which still works.
+
+
+TECHNICAL NOTE FOR THE EXAMINER
+-------------------------------
+Built with Python 3.11 and Flask. Data is stored in a SQLite database at
+instance\scholaris.db; it is not stored in the browser. Passwords are
+hashed with Werkzeug (PBKDF2/scrypt), never stored as plain text.
+The automated test suite runs with:  pytest -q
