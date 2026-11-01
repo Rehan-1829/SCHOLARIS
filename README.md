@@ -215,26 +215,21 @@ the three roles, so a broken template cannot hide behind a passing unit test.
 
 ## Deploying it
 
-The app is a normal WSGI application. SQLite is ideal for the demo, but hosting platforms
-with ephemeral disks need a hosted Postgres and a persistent process.
+**PythonAnywhere (free)** is the recommended host: the app runs on a normal WSGI server and
+the SQLite file lives on persistent disk, so nothing in the code changes. The free web app
+is switched off after about a month without a login, so renew it before a viva.
 
-**Render (free tier)** — recommended for a public link:
-1. Push the repository to GitHub.
-2. New → Web Service, build `pip install -r requirements.txt`,
-   start `gunicorn run:app` (add `gunicorn` to the requirements for the deployment).
-3. Add `SECRET_KEY` and `CURRENT_TERM` as environment variables.
-4. The free instance sleeps after inactivity, so the first load can take ~30 seconds.
+**Render + Neon (free)** gives a permanent URL with automatic deploys from GitHub. Render's
+free disk is ephemeral, so the database moves to Neon's free Postgres — `DATABASE_URL` is
+all it takes. The free instance sleeps after 15 minutes, so the first request can take a
+minute.
 
-**PythonAnywhere (free tier)** — the classic Flask student host: create a web app, point the
-WSGI file at `run:app`, set the virtualenv and run `flask --app run.py seed` in a console.
+**Vercel and Cloudflare Workers are not a fit.** Vercel can run Flask as a serverless
+function but has no writable disk (it would still need Neon); Cloudflare Workers cannot run
+Flask or SQLAlchemy at all. Both would mean a rewrite, not a deployment.
 
-**Do not use Vercel or Cloudflare Workers for this project.** Vercel is built around
-frontend/serverless frameworks and Cloudflare Workers cannot run Flask or a SQLite file.
-Both would force a rewrite rather than a deployment.
-
-If you outgrow SQLite, set `DATABASE_URL` to a Postgres URL (Neon, Render Postgres, Supabase)
-and re-run `flask --app run.py seed --force`. Nothing else changes; the models are
-dialect-neutral.
+Step-by-step instructions for both working options, including environment variables and
+seeding, are in [DEPLOY.md](DEPLOY.md).
 
 ## Why the code is organised this way
 

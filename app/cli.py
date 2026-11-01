@@ -366,9 +366,17 @@ def seed_demo_data(force: bool = False) -> bool:
 
 @click.command("seed")
 @click.option("--force", is_flag=True, help="Drop every table first, then rebuild the demo data.")
+@click.option(
+    "--if-empty",
+    is_flag=True,
+    help="Seed only when there are no accounts; safe to run on every boot.",
+)
 @with_appcontext
-def seed_command(force: bool):
+def seed_command(force: bool, if_empty: bool):
     """Create demo students, classes, marks and fees."""
+    if if_empty and User.query.first():
+        click.echo("Data already present, leaving it untouched.")
+        return
     if not seed_demo_data(force=force):
         click.echo("Data already exists. Use --force to rebuild the demo college.")
 

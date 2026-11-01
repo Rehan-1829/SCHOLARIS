@@ -7,13 +7,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 def _database_uri() -> str:
     """Use DATABASE_URL when provided, otherwise a local SQLite file.
 
-    Render/Heroku hand out ``postgres://`` URLs which SQLAlchemy 2.x rejects,
-    so normalise that prefix.
+    Hosts hand out ``postgres://`` and plain ``postgresql://`` URLs. Both are
+    rewritten to the psycopg 3 dialect that requirements.txt installs, and
+    ``postgres://`` also has to be renamed because SQLAlchemy 2.x rejects it.
     """
     url = os.environ.get("DATABASE_URL", "").strip()
     if url:
         if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql://", 1)
+            url = url.replace("postgres://", "postgresql+psycopg://", 1)
+        elif url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+psycopg://", 1)
         return url
     return f"sqlite:///{BASE_DIR / 'instance' / 'scholaris.db'}"
 

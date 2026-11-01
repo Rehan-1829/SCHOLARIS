@@ -7,5 +7,10 @@ SQLAlchemy==2.1.6
 Werkzeug==3.1.9
 WTForms==3.2.2
 
+# Deployment: WSGI server and the Postgres driver used when DATABASE_URL is set.
+# Neither is needed for the local SQLite demo.
+waitress==3.0.2
+psycopg[binary]==3.3.6
+
 # Development / testing
 pytest==9.1.1

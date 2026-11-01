@@ -13,7 +13,10 @@ from .extensions import csrf, db, login_manager
 def create_app(config_object=Config) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_object(config_object)
-    Path(app.instance_path).mkdir(parents=True, exist_ok=True)
+    # A hosted Postgres deployment runs on a read-only filesystem; only a local
+    # SQLite database needs the instance folder to exist.
+    if app.config["SQLALCHEMY_DATABASE_URI"].startswith("sqlite"):
+        Path(app.instance_path).mkdir(parents=True, exist_ok=True)
 
     db.init_app(app)
     csrf.init_app(app)
